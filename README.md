@@ -1,0 +1,158 @@
+# Shopify Metafields Copy Tool
+
+A Node.js script for copying Shopify Metafield and Metaobject definitions from one Shopify store to another. This tool is primarily designed for transferring configurations from development stores to production stores.
+
+## Overview
+
+This tool allows you to copy:
+- **Metafield Definitions**: Custom field definitions for various Shopify objects (products, variants, collections, etc.)
+- **Metaobject Definitions**: Custom object type definitions with their field structures
+
+## Prerequisites
+
+- **Node.js 18+** (required for native fetch support)
+- Access to both source and target Shopify stores
+- Admin API access tokens for both stores
+
+## Installation
+
+1. Clone or download this repository
+2. Ensure you have Node.js 18+ installed
+3. No additional dependencies required (uses native Node.js fetch)
+
+## Usage
+
+### Basic Command Structure
+
+```bash
+node copyShopifyMetafields.js --sourceStore <source-store> --sourceToken <source-token> --targetStore <target-store> --targetToken <target-token> --metafields --metaobjects --shopifyObjectTypes <object-types>
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--sourceStore` | Yes | Source Shopify store domain (e.g., `my-dev-store`) |
+| `--sourceToken` | Yes | Source Shopify admin API access token |
+| `--targetStore` | Yes | Target Shopify store domain (e.g., `my-prod-store`) |
+| `--targetToken` | Yes | Target Shopify admin API access token |
+| `--metafields` | No | Flag to copy metafield definitions |
+| `--metaobjects` | No | Flag to copy metaobject definitions |
+| `--shopifyObjectTypes` | Yes | Comma-separated list of Shopify object types for metafields |
+
+### Examples
+
+#### Copy both metafields and metaobjects
+```bash
+node copyShopifyMetafields.js \
+  --sourceStore my-dev-store \
+  --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
+  --targetStore my-prod-store \
+  --targetToken shpat_yyyyyyyyyyyyyyyyyyyy \
+  --metafields \
+  --metaobjects \
+  --shopifyObjectTypes PRODUCT,PRODUCTVARIANT,COLLECTION
+```
+
+#### Copy only metafields
+```bash
+node copyShopifyMetafields.js \
+  --sourceStore my-dev-store \
+  --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
+  --targetStore my-prod-store \
+  --targetToken shpat_yyyyyyyyyyyyyyyyyyyy \
+  --metafields \
+  --shopifyObjectTypes PRODUCT,COLLECTION
+```
+
+#### Copy only metaobjects
+```bash
+node copyShopifyMetafields.js \
+  --sourceStore my-dev-store \
+  --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
+  --targetStore my-prod-store \
+  --targetToken shpat_yyyyyyyyyyyyyyyyyyyy \
+  --metaobjects \
+  --shopifyObjectTypes PRODUCT
+```
+
+### Supported Shopify Object Types
+
+The `--shopifyObjectTypes` parameter accepts comma-separated values. Common types include:
+
+- `PRODUCT`
+- `PRODUCTVARIANT`
+- `COLLECTION`
+- `CUSTOMER`
+- `ORDER`
+- `PAGE`
+- `BLOG`
+- `ARTICLE`
+
+For a complete list of supported types, see the [Shopify Admin API documentation](https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType).
+
+## Limitations
+
+⚠️ **Important Limitations to Be Aware Of:**
+
+1. **Metaobject References**: The tool cannot copy metaobject definitions that contain fields with metaobject references (`metaobject_reference` type)
+2. **Metafield Metaobject References**: The tool cannot copy metafields that are references to metaobjects
+3. **API Complexity**: Creating these reference types programmatically requires specific metaobject IDs, which makes automated copying challenging
+
+### What Gets Skipped
+
+- Metaobject definitions with fields that reference other metaobjects
+- Metafield definitions that reference metaobjects
+- Any definitions that would cause API errors during creation
+
+## How It Works
+
+1. **Source Data Retrieval**: Fetches metafield and metaobject definitions from the source store using Shopify's Admin GraphQL API
+2. **Data Transformation**: Processes the definitions to remove internal IDs and flatten nested structures
+3. **Validation**: Checks for unsupported reference types and skips problematic definitions
+4. **Target Creation**: Creates the definitions in the target store using the Admin GraphQL API
+5. **Error Handling**: Reports any creation failures with detailed error messages
+
+## Error Handling
+
+The tool provides detailed error reporting:
+- GraphQL errors are logged with full details
+- Failed definition creations show specific user errors
+- Original variables are logged for debugging purposes
+
+## Security Considerations
+
+- Store your access tokens securely
+- Use environment variables for tokens in production environments
+- Ensure tokens have appropriate permissions (read access to source, write access to target)
+- Consider using private apps with limited scopes
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"GraphQL query failed"**: Check your access tokens and store domains
+2. **"User Errors"**: Review the specific error messages for validation issues
+3. **Missing definitions**: Some definitions may be skipped due to reference limitations
+
+### Debug Mode
+
+The tool provides verbose logging by default. Look for:
+- `************ CREATING METAOBJECT DEFINITION FOR [name] *************************`
+- `************ CREATING METAFIELD DEFINITION FOR [name] *************************`
+- Success/failure messages for each definition
+
+## Contributing
+
+This tool was created by Zion Emond. Feel free to submit issues or improvements.
+
+## License
+
+This project is provided as-is for internal use. Please ensure compliance with Shopify's API terms of service when using this tool.
+
+## Support
+
+For issues related to:
+- **Shopify API**: Refer to [Shopify's API documentation](https://shopify.dev/docs/api)
+- **Tool functionality**: Check the error messages and ensure you're using Node.js 18+
+- **Access tokens**: Verify permissions in your Shopify admin panel

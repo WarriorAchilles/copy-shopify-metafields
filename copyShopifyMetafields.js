@@ -1,5 +1,5 @@
 // Node 18+
-// Author: Zion Emond @ CQL
+// Author: Zion Emond
 
 function printHelp() {
   console.log(`
