@@ -34,7 +34,7 @@ git clone https://github.com/warriorachilles/shopify-metadata-migrator.git
 cd shopify-metadata-migrator
 # Ensure you have Node.js 18+ installed
 # No additional dependencies required (uses native Node.js fetch)
-node copyShopifyMetafields.js --help
+node migrateShopifyMetafields.js --help
 ```
 
 ## Usage
