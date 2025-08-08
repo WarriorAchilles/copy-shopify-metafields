@@ -241,7 +241,9 @@ shopify-metadata-migrator --help
 
 ## License
 
-This project is provided as-is for internal use. Please ensure compliance with Shopify's API terms of service when using this tool.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Please ensure compliance with Shopify's API terms of service when using this tool.
 
 ## Support
 
