@@ -4,11 +4,11 @@
   "description": "A CLI tool for migrating Shopify metafield and metaobject definitions between stores",
   "main": "migrateShopifyMetafields.js",
   "bin": {
-    "shopify-metadata-migrator": "./migrateShopifyMetafields.js"
+    "shopify-metadata-migrator": "migrateShopifyMetafields.js"
   },
   "scripts": {
     "start": "node migrateShopifyMetafields.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node migrateShopifyMetafields.js --help"
   },
   "keywords": [
     "shopify",
@@ -35,5 +35,12 @@
     "url": "https://github.com/warriorachilles/shopify-metadata-migrator/issues"
   },
   "homepage": "https://github.com/warriorachilles/shopify-metadata-migrator#readme",
-  "preferGlobal": true
+  "preferGlobal": true,
+  "files": [
+    "migrateShopifyMetafields.js",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

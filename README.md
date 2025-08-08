@@ -2,7 +2,19 @@
 
 # Shopify Metadata Migrator
 
+[![npm version](https://badge.fury.io/js/shopify-metadata-migrator.svg)](https://badge.fury.io/js/shopify-metadata-migrator)
+[![npm downloads](https://img.shields.io/npm/dm/shopify-metadata-migrator.svg)](https://www.npmjs.com/package/shopify-metadata-migrator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**📦 [View on npm](https://www.npmjs.com/package/shopify-metadata-migrator)**
+
 A Node.js script for copying Shopify Metafield and Metaobject definitions from one Shopify store to another. This tool is primarily designed for transferring configurations from development stores to production stores.
+
+## Quick Install
+
+```bash
+npm install -g shopify-metadata-migrator
+```
 
 ## Overview
 
@@ -206,6 +218,26 @@ The tool provides verbose logging by default. Look for:
 ## Contributing
 
 This tool was created by Zion Emond. Feel free to submit issues or improvements.
+
+### Publishing to npm
+
+This package is automatically published to npm when:
+- A new GitHub release is created (automated)
+- The manual publish workflow is triggered (manual)
+
+To publish manually:
+1. Go to the [Actions tab](https://github.com/warriorachilles/shopify-metadata-migrator/actions)
+2. Select "Manual Publish to npm"
+3. Enter the new version number
+4. Click "Run workflow"
+
+### Development
+
+To test the package locally before publishing:
+```bash
+npm link
+shopify-metadata-migrator --help
+```
 
 ## License
 
