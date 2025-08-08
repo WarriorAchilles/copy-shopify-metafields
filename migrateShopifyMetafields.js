@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Node 18+
-// Author: Zion Emond @ CQL
+// Author: Zion Emond
 
 function printHelp() {
   console.log(`
@@ -18,6 +18,7 @@ Options:
   --metafields           Flag indicating that metafield definitions should be migrated
   --metaobjects          Flag indicating that metaobject definitions should be migrated
   --shopifyObjectTypes   Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.
+  --apiVersion           Shopify API version to use (auto-detects latest if not specified)
   --help                 Show this help message
 `);
 }
@@ -113,6 +114,52 @@ function getMetafieldDefinitionsQuery(ownerType) {
   }`;
 };
 
+// Query to get the latest supported API version
+const getLatestApiVersionQuery = `{
+  shop {
+    apiVersion
+  }
+}`;
+
+async function getLatestApiVersion(store, token) {
+  try {
+    // Use a known working version to query for the latest version
+    const endpoint = `https://${store}.myshopify.com/admin/api/2025-04/graphql.json`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': token
+      },
+      body: JSON.stringify({
+        query: getLatestApiVersionQuery
+      })
+    });
+
+    const result = await response.json();
+    
+    if (result.errors) {
+      console.warn('Could not auto-detect API version, using default 2025-04');
+      return '2025-04';
+    }
+
+    if (result.data && result.data.shop && result.data.shop.apiVersion) {
+      console.log(`Auto-detected latest API version: ${result.data.shop.apiVersion}`);
+      return result.data.shop.apiVersion;
+    }
+
+    console.warn('Could not auto-detect API version, using default 2025-04');
+    return '2025-04';
+  } catch (error) {
+    console.warn('Error auto-detecting API version, using default 2025-04:', error.message);
+    return '2025-04';
+  }
+}
+
+function buildApiEndpoint(store, apiVersion = '2025-04') {
+  return `https://${store}.myshopify.com/admin/api/${apiVersion}/graphql.json`;
+}
+
 async function graphqlRequest(graphqlEndpoint, authToken, query, variables = {}) {
   const response = await fetch(graphqlEndpoint, {
     method: 'POST',
@@ -138,9 +185,16 @@ async function graphqlRequest(graphqlEndpoint, authToken, query, variables = {})
 }
 
 
-async function copyMetaobjectDefinitions(sourceStore, sourceToken, targetStore, targetToken) {
-  const SOURCE_ENDPOINT = `https://${sourceStore}.myshopify.com/admin/api/2025-04/graphql.json`
-  const TARGET_ENDPOINT = `https://${targetStore}.myshopify.com/admin/api/2025-04/graphql.json`
+async function copyMetaobjectDefinitions(sourceStore, sourceToken, targetStore, targetToken, apiVersion = null) {
+  // Auto-detect API version if not specified
+  let finalApiVersion = apiVersion;
+  if (!finalApiVersion) {
+    console.log('Auto-detecting latest API version...');
+    finalApiVersion = await getLatestApiVersion(sourceStore, sourceToken);
+  }
+  
+  const SOURCE_ENDPOINT = buildApiEndpoint(sourceStore, finalApiVersion);
+  const TARGET_ENDPOINT = buildApiEndpoint(targetStore, finalApiVersion);
     try {
         const sourceMetaobjectDefinitions = await graphqlRequest(SOURCE_ENDPOINT, sourceToken, metaobjectDefinitionsQuery);
         const sourceMetaObjectsArray = sourceMetaobjectDefinitions.metaobjectDefinitions.edges.map((edge => 
@@ -245,9 +299,16 @@ async function copyMetaobjectDefinitions(sourceStore, sourceToken, targetStore, 
     }
 }
 
-async function copyMetafieldDefinitions(sourceStore, sourceToken, targetStore, targetToken, shopifyObjectTypes) {
-  const SOURCE_ENDPOINT = `https://${sourceStore}.myshopify.com/admin/api/2025-04/graphql.json`
-  const TARGET_ENDPOINT = `https://${targetStore}.myshopify.com/admin/api/2025-04/graphql.json`
+async function copyMetafieldDefinitions(sourceStore, sourceToken, targetStore, targetToken, shopifyObjectTypes, apiVersion = null) {
+  // Auto-detect API version if not specified
+  let finalApiVersion = apiVersion;
+  if (!finalApiVersion) {
+    console.log('Auto-detecting latest API version...');
+    finalApiVersion = await getLatestApiVersion(sourceStore, sourceToken);
+  }
+  
+  const SOURCE_ENDPOINT = buildApiEndpoint(sourceStore, finalApiVersion);
+  const TARGET_ENDPOINT = buildApiEndpoint(targetStore, finalApiVersion);
 
   const objectTypes = shopifyObjectTypes.split(',');
   for (const objectType of objectTypes) {
@@ -322,9 +383,9 @@ if (!argMap.shopifyObjectTypes) {
 }
 
 if (argMap.metaobjects) {
-  copyMetaobjectDefinitions(argMap.sourceStore, argMap.sourceToken, argMap.targetStore, argMap.targetToken);
+  copyMetaobjectDefinitions(argMap.sourceStore, argMap.sourceToken, argMap.targetStore, argMap.targetToken, argMap.apiVersion || null);
 }
 
 if (argMap.metafields) {
-  copyMetafieldDefinitions(argMap.sourceStore, argMap.sourceToken, argMap.targetStore, argMap.targetToken, argMap.shopifyObjectTypes);
+  copyMetafieldDefinitions(argMap.sourceStore, argMap.sourceToken, argMap.targetStore, argMap.targetToken, argMap.shopifyObjectTypes, argMap.apiVersion || null);
 }

@@ -56,6 +56,7 @@ shopify-metadata-migrator --sourceStore <source-store> --sourceToken <source-tok
 | `--metafields` | No | Flag to copy metafield definitions |
 | `--metaobjects` | No | Flag to copy metaobject definitions |
 | `--shopifyObjectTypes` | Yes | Comma-separated list of Shopify object types for metafields |
+| `--apiVersion` | No | Shopify API version to use (auto-detects latest if not specified) |
 
 ### Examples
 
@@ -93,6 +94,31 @@ shopify-metadata-migrator \
   --shopifyObjectTypes PRODUCT
 ```
 
+#### Using auto-detection (recommended)
+```bash
+shopify-metadata-migrator \
+  --sourceStore my-dev-store \
+  --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
+  --targetStore my-prod-store \
+  --targetToken shpat_yyyyyyyyyyyyyyyyyyyy \
+  --metafields \
+  --metaobjects \
+  --shopifyObjectTypes PRODUCT,COLLECTION
+```
+
+#### Using a specific API version
+```bash
+shopify-metadata-migrator \
+  --sourceStore my-dev-store \
+  --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
+  --targetStore my-prod-store \
+  --targetToken shpat_yyyyyyyyyyyyyyyyyyyy \
+  --metafields \
+  --metaobjects \
+  --shopifyObjectTypes PRODUCT,COLLECTION \
+  --apiVersion 2025-01
+```
+
 ### Supported Shopify Object Types
 
 The `--shopifyObjectTypes` parameter accepts comma-separated values. Common types include:
@@ -121,6 +147,32 @@ For a complete list of supported types, see the [Shopify Admin API documentation
 - Metaobject definitions with fields that reference other metaobjects
 - Metafield definitions that reference metaobjects
 - Any definitions that would cause API errors during creation
+
+## API Version Management
+
+The tool uses Shopify's Admin GraphQL API and supports intelligent version management:
+
+- **Auto-Detection**: Automatically queries Shopify for the latest supported API version
+- **Manual Override**: Use `--apiVersion` parameter to specify a specific version
+- **Fallback**: Falls back to `2025-04` if auto-detection fails
+- **Version Compatibility**: Ensure both source and target stores support the specified API version
+- **Future-Proofing**: Always uses the latest available API version by default
+
+### How Auto-Detection Works
+
+The tool automatically queries Shopify's GraphQL API to determine the latest supported version:
+
+1. **Initial Query**: Uses a known working API version (2025-04) to query the shop's `apiVersion` field
+2. **Version Discovery**: Retrieves the latest supported API version from Shopify
+3. **Fallback**: If auto-detection fails, falls back to 2025-04
+4. **Logging**: Shows the detected version in the console output
+
+### API Version Best Practices
+
+1. **Use Auto-Detection**: Let the tool automatically find the latest version (recommended)
+2. **Manual Override**: Use `--apiVersion` only when you need a specific version
+3. **Test First**: Test with a development store before using in production
+4. **Monitor Deprecation**: Follow Shopify's API deprecation schedule
 
 ## How It Works
 
