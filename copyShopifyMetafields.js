@@ -1,21 +1,22 @@
+#!/usr/bin/env node
 // Node 18+
-// Author: Zion Emond
+// Author: Zion Emond @ CQL
 
 function printHelp() {
   console.log(`
-Copies the Metafield and/or Metaobject definitions from the Source Shopify site to the Target Shopify site.
+Migrates Shopify Metafield and Metaobject definitions from the Source Shopify site to the Target Shopify site.
 NOTE: This will not copy and will skip over metaobject definitions that have fields with metaobject references, and also metafields that are metaobject references. Creating those programmatically via API is difficult, as it requires having the ID of the desired metaobject to reference
 
 Usage:
-  node copyShopifyMetafields.js --sourceStore <shopify-store> --sourceToken <access-token> --targetStore <shopify-store> --targetToken <access-token> --metafields --metaobjects --shopifyObjectTypes PRODUCT,PRODUCTVARIANT,COLLECTION
+  shopify-metadata-migrator --sourceStore <shopify-store> --sourceToken <access-token> --targetStore <shopify-store> --targetToken <access-token> --metafields --metaobjects --shopifyObjectTypes PRODUCT,PRODUCTVARIANT,COLLECTION
 
 Options:
   --sourceStore          Source Shopify store domain (required)
   --sourceToken          Source Shopify access token (required)
   --targetStore          Target Shopify store domain (required)
   --targetToken          Target Shopify access token (required)
-  --metafields           Flag indicating that metafield definitions should be copiedz
-  --metaobjects          Flag indicating that metaobject definitions should be copied
+  --metafields           Flag indicating that metafield definitions should be migrated
+  --metaobjects          Flag indicating that metaobject definitions should be migrated
   --shopifyObjectTypes   Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.
   --help                 Show this help message
 `);

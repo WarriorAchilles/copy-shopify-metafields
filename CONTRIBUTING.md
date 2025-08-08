@@ -43,8 +43,8 @@ If you have a suggestion for a new feature or improvement:
 1. **Fork the repository**
    ```bash
    # Clone your fork
-   git clone https://github.com/YOUR_USERNAME/copy-shopify-metafields.git
-   cd copy-shopify-metafields
+   git clone https://github.com/YOUR_USERNAME/shopify-metadata-migrator.git
+   cd shopify-metadata-migrator
    ```
 
 2. **Ensure you have the prerequisites**

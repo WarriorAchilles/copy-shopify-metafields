@@ -16,16 +16,33 @@ This tool allows you to copy:
 
 ## Installation
 
-1. Clone or download this repository
-2. Ensure you have Node.js 18+ installed
-3. No additional dependencies required (uses native Node.js fetch)
+### Option 1: Install globally (recommended)
+```bash
+npm install -g shopify-metadata-migrator
+```
+
+### Option 2: Install locally
+```bash
+npm install shopify-metadata-migrator
+npx shopify-metadata-migrator --help
+```
+
+### Option 3: Run directly (development)
+```bash
+# Clone or download this repository
+git clone https://github.com/warriorachilles/shopify-metadata-migrator.git
+cd shopify-metadata-migrator
+# Ensure you have Node.js 18+ installed
+# No additional dependencies required (uses native Node.js fetch)
+node copyShopifyMetafields.js --help
+```
 
 ## Usage
 
 ### Basic Command Structure
 
 ```bash
-node copyShopifyMetafields.js --sourceStore <source-store> --sourceToken <source-token> --targetStore <target-store> --targetToken <target-token> --metafields --metaobjects --shopifyObjectTypes <object-types>
+shopify-metadata-migrator --sourceStore <source-store> --sourceToken <source-token> --targetStore <target-store> --targetToken <target-token> --metafields --metaobjects --shopifyObjectTypes <object-types>
 ```
 
 ### Parameters
@@ -44,7 +61,7 @@ node copyShopifyMetafields.js --sourceStore <source-store> --sourceToken <source
 
 #### Copy both metafields and metaobjects
 ```bash
-node copyShopifyMetafields.js \
+shopify-metadata-migrator \
   --sourceStore my-dev-store \
   --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
   --targetStore my-prod-store \
@@ -56,7 +73,7 @@ node copyShopifyMetafields.js \
 
 #### Copy only metafields
 ```bash
-node copyShopifyMetafields.js \
+shopify-metadata-migrator \
   --sourceStore my-dev-store \
   --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
   --targetStore my-prod-store \
@@ -67,7 +84,7 @@ node copyShopifyMetafields.js \
 
 #### Copy only metaobjects
 ```bash
-node copyShopifyMetafields.js \
+shopify-metadata-migrator \
   --sourceStore my-dev-store \
   --sourceToken shpat_xxxxxxxxxxxxxxxxxxxx \
   --targetStore my-prod-store \
