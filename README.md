@@ -8,7 +8,7 @@
 
 **📦 [View on npm](https://www.npmjs.com/package/shopify-metadata-migrator)**
 
-A Node.js script for copying Shopify Metafield and Metaobject definitions from one Shopify store to another. This tool is primarily designed for transferring configurations from development stores to production stores.
+A CLI tool for copying Shopify Metafield and Metaobject definitions from one Shopify store to another. This tool is primarily designed for transferring configurations from development stores to production stores.
 
 ## Quick Install
 
