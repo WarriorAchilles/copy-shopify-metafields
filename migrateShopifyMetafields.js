@@ -290,6 +290,53 @@ async function copyMetaobjectDefinitions(
           });
         }
       }
+      // This was an unsuccessful (probably not very smart to begin with) experiment to try and get the correct ID for a metaobject reference.
+    // Maybe it could be changed to actually work in the future, who knows.
+    /*
+        // wait to try to create the ones with metaobject references in case they reference other metaobjects we were copying
+        if (definitionsWithMetaobjectReferences.length) {
+          const targetMetaobjectDefinitions = await graphqlRequest(TARGET_ENDPOINT, targetToken, metaobjectDefinitionsQuery);
+          const targetMetaObjectsArray = targetMetaobjectDefinitions.metaobjectDefinitions.edges.map((edge => 
+            {
+                const {id, fieldDefinitions, ...rest} = edge.node;
+                const flattenedFieldDefinitions = fieldDefinitions.map(field => ({
+                    ...field,
+                    type: field.type.name
+                }));
+                return {
+                    ...rest,
+                    fieldDefinitions: flattenedFieldDefinitions
+                }
+            }
+          ));
+          for (const definition of definitionsWithMetaobjectReferences) {
+            for (const fieldDefinition of definition.fieldDefinitions) {
+              if (fieldDefinition.type === 'metaobject_reference') {
+                // try to figure out referenced metaobject based on the field definition's key
+                const key = fieldDefinition.key;
+                const matchingMetaobjectDefinition = targetMetaObjectsArray.find(objectDefinition => objectDefinition.fieldDefinitions.find(field => field.key === key));
+                if (matchingMetaobjectDefinition && matchingMetaobjectDefinition.id) {
+                  const validation = fieldDefinition.validations.find(validation => validation.name === 'metaobject_definition_id');
+                  validation.value = matchingMetaobjectDefinition.id;
+                }
+              }
+            }
+            console.log('definition: ', JSON.stringify(definition, null, 2));
+            const variables = {
+                definition
+            }
+            const targetCreateMetaobjectDefinitionsResponse = await graphqlRequest(TARGET_ENDPOINT, targetToken, createMetaObjectsDefinitionMutation, variables);
+            // console.log('response: ', JSON.stringify(targetCreateMetaobjectDefinitionsResponse, null, 2));
+            if (targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate && targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate.userErrors && targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate.userErrors.length) {
+              console.error('Failed to create metaobject definition for: ', definition.name);
+              const userErrors = targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate.userErrors
+              console.error('User Errors: ', userErrors);
+              console.log('original variables: ', JSON.stringify(variables, null, 2));
+            } else {
+              console.log('successfully created metaobject definition for: ', definition.name);
+            }
+          }
+        }*/
     }
   } catch (err) {
     recordError('GraphQL request failed while fetching source metaobject definitions', err);
