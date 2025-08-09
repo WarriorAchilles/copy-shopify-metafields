@@ -82,10 +82,9 @@ function initializeLogger(level) {
 }
 
 function recordError(context, err) {
-  runSummary.errors.push({ context, message: err?.message || String(err) });
-  if (logLevel !== 'quiet') {
-    console.error(context + ':', err?.message || String(err));
-  }
+  const message = err?.message || String(err);
+  runSummary.errors.push({ context, message });
+  logger.error(context + ':', message);
 }
 
 const metaobjectDefinitionsQuery = `{
@@ -535,12 +534,8 @@ function printFinalSummary() {
     `Metafields: processed=${runSummary.metafields.processed}, created=${runSummary.metafields.created}, failed=${runSummary.metafields.failed}`
   );
 
-  if (logLevel !== 'quiet') {
-    console.log(lines.join('\n'));
-  } else {
-    // Quiet mode: show only the summary
-    console.log(lines.join('\n'));
-  }
+  // The summary is always printed. In quiet mode, it's the main output.
+  console.log(lines.join('\n'));
 
   if (runSummary.errors.length && logLevel !== 'quiet') {
     console.log('Errors encountered:');
@@ -635,10 +630,9 @@ initializeLogger(resolvedLevel);
 
     if (options.metafields) {
       if (!options.shopifyObjectTypes) {
-        console.error(
+        throw new Error(
           '--shopifyObjectTypes is required. Use --help for more information.'
         );
-        process.exit(1);
       }
       spinner.updateMessage('Migrating metafield definitions...');
       tasks.push(
