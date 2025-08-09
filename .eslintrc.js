@@ -19,7 +19,7 @@ module.exports = {
     'prefer-const': 'error',
     'no-var': 'error',
     'object-shorthand': 'error',
-    'prefer-template': 'error',
+    'prefer-template': 'off',
   },
   ignorePatterns: [
     'node_modules/',
