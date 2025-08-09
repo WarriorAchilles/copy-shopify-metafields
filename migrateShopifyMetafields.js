@@ -2,26 +2,9 @@
 // Node 18+
 // Author: Zion Emond
 
-function printHelp() {
-  console.log(`
-Migrates Shopify Metafield and Metaobject definitions from the Source Shopify site to the Target Shopify site.
-NOTE: This will not copy and will skip over metaobject definitions that have fields with metaobject references, and also metafields that are metaobject references. Creating those programmatically via API is difficult, as it requires having the ID of the desired metaobject to reference
+const { Command, Option } = require('commander');
+const pkg = require('./package.json');
 
-Usage:
-  shopify-metadata-migrator --sourceStore <shopify-store> --sourceToken <access-token> --targetStore <shopify-store> --targetToken <access-token> --metafields --metaobjects --shopifyObjectTypes PRODUCT,PRODUCTVARIANT,COLLECTION
-
-Options:
-  --sourceStore          Source Shopify store domain (required)
-  --sourceToken          Source Shopify access token (required)
-  --targetStore          Target Shopify store domain (required)
-  --targetToken          Target Shopify access token (required)
-  --metafields           Flag indicating that metafield definitions should be migrated
-  --metaobjects          Flag indicating that metaobject definitions should be migrated
-  --shopifyObjectTypes   Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.
-  --apiVersion           Shopify API version to use (default: 2025-07)
-  --help                 Show this help message
-`);
-}
 
 const metaobjectDefinitionsQuery = `{
   metaobjectDefinitions(first: 250) {
@@ -298,44 +281,44 @@ async function copyMetafieldDefinitions(sourceStore, sourceToken, targetStore, t
   }
 }
 
-// eslint-disable-next-line no-undef
-const args = process.argv.slice(2);
-const argMap = {};
-for (let i = 0; i < args.length; i++) {
-  const arg = args[i];
-  if (arg === '-help' || arg === '--help' || arg === '-h') {
-    printHelp();
-    // eslint-disable-next-line no-undef
-    process.exit(0);
-  } else if (arg === '--metafields') {
-    argMap.metafields = true;
-  } else if (arg === '--metaobjects') {
-    argMap.metaobjects = true;
-  } else if (arg.startsWith('--')) {
-    argMap[arg.slice(2)] = args[i + 1];
-    i++;
-  } else if (arg.startsWith('-')) {
-    argMap[arg.slice(1)] = args[i + 1];
-    i++;
-  }
-}
+const program = new Command();
 
-if (!argMap.shopifyObjectTypes) {
+program
+  .name('shopify-metadata-migrator')
+  .description('Migrates Shopify Metafield and Metaobject definitions from the Source Shopify site to the Target Shopify site.')
+  .version(pkg.version)
+  .showHelpAfterError(true)
+  .enablePositionalOptions()
+  .passThroughOptions();
+
+program
+  .requiredOption('-s, --sourceStore <shopify-store>', 'Source Shopify store domain (required)')
+  .requiredOption('-S, --sourceToken <access-token>', 'Source Shopify access token (required)')
+  .requiredOption('-t, --targetStore <shopify-store>', 'Target Shopify store domain (required)')
+  .requiredOption('-T, --targetToken <access-token>', 'Target Shopify access token (required)')
+  .option('-m, --metafields', 'Flag indicating that metafield definitions should be migrated')
+  .option('-M, --metaobjects', 'Flag indicating that metaobject definitions should be migrated')
+  .requiredOption('-o, --shopifyObjectTypes <types>', 'Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.')
+  .option('-a, --apiVersion <version>', 'Shopify API version to use', '2025-07');
+
+program.parse(process.argv);
+
+const options = program.opts();
+
+if (!options.shopifyObjectTypes) {
   console.error('--shopifyObjectTypes is required. Use --help for more information.');
-  // eslint-disable-next-line no-undef
   process.exit(1);
 }
 
-if (!argMap.metaobjects && !argMap.metafields) {
+if (!options.metaobjects && !options.metafields) {
   console.error('Please specify --metafields and/or --metaobjects');
-  // eslint-disable-next-line no-undef
   process.exit(1);
 }
 
-if (argMap.metaobjects) {
-  copyMetaobjectDefinitions(argMap.sourceStore, argMap.sourceToken, argMap.targetStore, argMap.targetToken, argMap.apiVersion || '2025-07');
+if (options.metaobjects) {
+  copyMetaobjectDefinitions(options.sourceStore, options.sourceToken, options.targetStore, options.targetToken, options.apiVersion || '2025-07');
 }
 
-if (argMap.metafields) {
-  copyMetafieldDefinitions(argMap.sourceStore, argMap.sourceToken, argMap.targetStore, argMap.targetToken, argMap.shopifyObjectTypes, argMap.apiVersion || '2025-07');
+if (options.metafields) {
+  copyMetafieldDefinitions(options.sourceStore, options.sourceToken, options.targetStore, options.targetToken, options.shopifyObjectTypes, options.apiVersion || '2025-07');
 }
