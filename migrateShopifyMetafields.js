@@ -285,7 +285,7 @@ const program = new Command();
 
 program
   .name('shopify-metadata-migrator')
-  .description('Migrates Shopify Metafield and Metaobject definitions from the Source Shopify site to the Target Shopify site.')
+  .description('Migrates Shopify Metafield and Metaobject definitions from the Source Shopify site to the Target Shopify site. NOTE: This will not copy and will skip over metaobject definitions that have fields with metaobject references, and also metafields that are metaobject references. Creating those programmatically via API is difficult, as it requires having the ID of the desired metaobject to reference')
   .version(pkg.version)
   .showHelpAfterError(true)
   .enablePositionalOptions()
@@ -298,17 +298,12 @@ program
   .requiredOption('-T, --targetToken <access-token>', 'Target Shopify access token (required)')
   .option('-m, --metafields', 'Flag indicating that metafield definitions should be migrated')
   .option('-M, --metaobjects', 'Flag indicating that metaobject definitions should be migrated')
-  .requiredOption('-o, --shopifyObjectTypes <types>', 'Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.')
+  .option('-o, --shopifyObjectTypes <types>', 'Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.')
   .option('-a, --apiVersion <version>', 'Shopify API version to use', '2025-07');
 
 program.parse(process.argv);
 
 const options = program.opts();
-
-if (!options.shopifyObjectTypes) {
-  console.error('--shopifyObjectTypes is required. Use --help for more information.');
-  process.exit(1);
-}
 
 if (!options.metaobjects && !options.metafields) {
   console.error('Please specify --metafields and/or --metaobjects');
@@ -320,5 +315,9 @@ if (options.metaobjects) {
 }
 
 if (options.metafields) {
+  if (!options.shopifyObjectTypes) {
+    console.error('--shopifyObjectTypes is required. Use --help for more information.');
+    process.exit(1);
+  }
   copyMetafieldDefinitions(options.sourceStore, options.sourceToken, options.targetStore, options.targetToken, options.shopifyObjectTypes, options.apiVersion || '2025-07');
 }
