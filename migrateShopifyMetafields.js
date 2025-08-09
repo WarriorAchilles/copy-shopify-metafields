@@ -5,6 +5,40 @@
 const { Command } = require('commander');
 const pkg = require('./package.json');
 
+// Loading spinner utility
+class LoadingSpinner {
+  constructor(message = 'Loading...') {
+    this.message = message;
+    this.spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    this.currentIndex = 0;
+    this.interval = null;
+    this.isRunning = false;
+  }
+
+  start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.interval = setInterval(() => {
+      process.stdout.write(`\r${this.spinner[this.currentIndex]} ${this.message}`);
+      this.currentIndex = (this.currentIndex + 1) % this.spinner.length;
+    }, 80);
+  }
+
+  stop() {
+    if (!this.isRunning) return;
+    this.isRunning = false;
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+    process.stdout.write('\r' + ' '.repeat(this.message.length + 2) + '\r');
+  }
+
+  updateMessage(message) {
+    this.message = message;
+  }
+}
+
 // Logger and run summary (set after parsing CLI options)
 let logLevel = 'normal'; // 'quiet' | 'normal' | 'verbose' | 'debug'
 let logger = {
@@ -211,8 +245,17 @@ async function copyMetaobjectDefinitions(
         };
       });
 
-    for (const metaObjectDefinition of sourceMetaObjectsArray) {
+    logger.info(`Found ${sourceMetaObjectsArray.length} metaobject definitions to migrate`);
+
+    for (let i = 0; i < sourceMetaObjectsArray.length; i++) {
+      const metaObjectDefinition = sourceMetaObjectsArray[i];
       runSummary.metaobjects.processed += 1;
+      
+      // Update spinner with progress
+      if (global.spinner) {
+        global.spinner.updateMessage(`Migrating metaobject ${i + 1}/${sourceMetaObjectsArray.length}: ${metaObjectDefinition.name}`);
+      }
+      
       logger.info(
         `************ CREATING METAOBJECT DEFINITION FOR ${metaObjectDefinition.name} *************************`
       );
@@ -372,8 +415,17 @@ async function copyMetafieldDefinitions(
           };
         });
 
-      for (const metafieldDefinition of sourceMetafieldArray) {
+      logger.info(`Found ${sourceMetafieldArray.length} metafield definitions for ${objectType} to migrate`);
+
+      for (let i = 0; i < sourceMetafieldArray.length; i++) {
+        const metafieldDefinition = sourceMetafieldArray[i];
         runSummary.metafields.processed += 1;
+        
+        // Update spinner with progress
+        if (global.spinner) {
+          global.spinner.updateMessage(`Migrating metafield ${i + 1}/${sourceMetafieldArray.length} for ${objectType}: ${metafieldDefinition.name}`);
+        }
+        
         logger.info(
           `************ CREATING METAFIELD DEFINITION FOR ${metafieldDefinition.name} *************************`
         );
@@ -542,43 +594,56 @@ else if (options.quiet) resolvedLevel = 'quiet';
 initializeLogger(resolvedLevel);
 
 (async () => {
-  const tasks = [];
+  const spinner = new LoadingSpinner('Starting migration...');
+  global.spinner = spinner; // Make spinner globally accessible
+  spinner.start();
 
-  if (options.metaobjects) {
-    tasks.push(
-      copyMetaobjectDefinitions(
-        options.sourceStore,
-        options.sourceToken,
-        options.targetStore,
-        options.targetToken,
-        options.apiVersion || '2025-07'
-      )
-    );
-  }
+  try {
+    const tasks = [];
 
-  if (options.metafields) {
-    if (!options.shopifyObjectTypes) {
-      console.error(
-        '--shopifyObjectTypes is required. Use --help for more information.'
+    if (options.metaobjects) {
+      spinner.updateMessage('Migrating metaobject definitions...');
+      tasks.push(
+        copyMetaobjectDefinitions(
+          options.sourceStore,
+          options.sourceToken,
+          options.targetStore,
+          options.targetToken,
+          options.apiVersion || '2025-07'
+        )
       );
-      process.exit(1);
     }
-    tasks.push(
-      copyMetafieldDefinitions(
-        options.sourceStore,
-        options.sourceToken,
-        options.targetStore,
-        options.targetToken,
-        options.shopifyObjectTypes,
-        options.apiVersion || '2025-07'
-      )
-    );
-  }
 
-  await Promise.all(tasks);
-  printFinalSummary();
-})().catch(err => {
-  recordError('Unhandled error during migration', err);
-  printFinalSummary();
-  process.exitCode = 1;
-});
+    if (options.metafields) {
+      if (!options.shopifyObjectTypes) {
+        console.error(
+          '--shopifyObjectTypes is required. Use --help for more information.'
+        );
+        process.exit(1);
+      }
+      spinner.updateMessage('Migrating metafield definitions...');
+      tasks.push(
+        copyMetafieldDefinitions(
+          options.sourceStore,
+          options.sourceToken,
+          options.targetStore,
+          options.targetToken,
+          options.shopifyObjectTypes,
+          options.apiVersion || '2025-07'
+        )
+      );
+    }
+
+    await Promise.all(tasks);
+    spinner.updateMessage('Migration completed successfully!');
+    setTimeout(() => {
+      spinner.stop();
+      printFinalSummary();
+    }, 1000);
+  } catch (err) {
+    spinner.stop();
+    recordError('Unhandled error during migration', err);
+    printFinalSummary();
+    process.exitCode = 1;
+  }
+})();
