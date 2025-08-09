@@ -5,6 +5,53 @@
 const { Command } = require('commander');
 const pkg = require('./package.json');
 
+// Logger and run summary (set after parsing CLI options)
+let logLevel = 'normal'; // 'quiet' | 'normal' | 'verbose' | 'debug'
+let logger = {
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+  verbose: () => {},
+  debug: () => {},
+};
+let runSummary = {
+  metaobjects: { processed: 0, created: 0, failed: 0, details: [] },
+  metafields: { processed: 0, created: 0, failed: 0, details: [] },
+  errors: [],
+};
+
+function initializeLogger(level) {
+  logLevel = level;
+  const isQuiet = level === 'quiet';
+  const isVerbose = level === 'verbose' || level === 'debug';
+  const isDebug = level === 'debug';
+
+  logger = {
+    info: (...args) => {
+      if (!isQuiet) console.log(...args);
+    },
+    warn: (...args) => {
+      if (!isQuiet) console.warn(...args);
+    },
+    error: (...args) => {
+      if (!isQuiet) console.error(...args);
+    },
+    verbose: (...args) => {
+      if (isVerbose) console.log(...args);
+    },
+    debug: (...args) => {
+      if (isDebug) console.debug(...args);
+    },
+  };
+}
+
+function recordError(context, err) {
+  runSummary.errors.push({ context, message: err?.message || String(err) });
+  if (logLevel !== 'quiet') {
+    console.error(context + ':', err?.message || String(err));
+  }
+}
+
 const metaobjectDefinitionsQuery = `{
   metaobjectDefinitions(first: 250) {
     edges {
@@ -106,6 +153,13 @@ async function graphqlRequest(
   query,
   variables = {}
 ) {
+  logger.debug('GraphQL Request:', {
+    endpoint: graphqlEndpoint,
+    // Do not log tokens
+    query,
+    variables,
+  });
+
   const response = await fetch(graphqlEndpoint, {
     method: 'POST',
     headers: {
@@ -119,10 +173,10 @@ async function graphqlRequest(
   });
 
   const result = await response.json();
+  logger.debug('GraphQL Response:', result);
 
   if (result.errors) {
-    console.log('result: ', JSON.stringify(result, null, 2));
-    console.error('GraphQL Errors:', JSON.stringify(result.errors, null, 2));
+    logger.error('GraphQL Errors:', JSON.stringify(result.errors, null, 2));
     throw new Error('GraphQL query failed');
   }
 
@@ -157,16 +211,23 @@ async function copyMetaobjectDefinitions(
         };
       });
 
-    // eslint-disable-next-line prefer-const
-    // let definitionsWithMetaobjectReferences = [];
     for (const metaObjectDefinition of sourceMetaObjectsArray) {
-      console.log(
+      runSummary.metaobjects.processed += 1;
+      logger.info(
         `************ CREATING METAOBJECT DEFINITION FOR ${metaObjectDefinition.name} *************************`
       );
+
+      // Verbose: show field details without GraphQL internals
+      logger.verbose(
+        `Fields for ${metaObjectDefinition.name}: ` +
+          metaObjectDefinition.fieldDefinitions
+            .map(f => `${f.key || f.name}:${f.type}${f.required ? ' (required)' : ''}`)
+            .join(', ')
+      );
+
       let hasMetaobjectReference = false;
       for (const fieldDefinition of metaObjectDefinition.fieldDefinitions) {
         if (fieldDefinition.type === 'metaobject_reference') {
-          // definitionsWithMetaobjectReferences.push(metaObjectDefinition);
           hasMetaobjectReference = true;
         }
       }
@@ -175,96 +236,63 @@ async function copyMetaobjectDefinitions(
         const variables = {
           definition: metaObjectDefinition,
         };
-        const targetCreateMetaobjectDefinitionsResponse = await graphqlRequest(
-          TARGET_ENDPOINT,
-          targetToken,
-          createMetaObjectsDefinitionMutation,
-          variables
-        );
-        // console.log('response: ', JSON.stringify(targetCreateMetaobjectDefinitionsResponse, null, 2));
-
-        if (
-          targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate &&
-          targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate
-            .userErrors &&
-          targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate
-            .userErrors.length
-        ) {
-          console.error(
-            'Failed to create metaobject definition for: ',
-            metaObjectDefinition.name
+        try {
+          const targetCreateMetaobjectDefinitionsResponse = await graphqlRequest(
+            TARGET_ENDPOINT,
+            targetToken,
+            createMetaObjectsDefinitionMutation,
+            variables
           );
-          const userErrors =
+
+          if (
+            targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate &&
             targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate
-              .userErrors;
-          console.error('User Errors: ', userErrors);
-
-          console.log(
-            'original variables: ',
-            JSON.stringify(variables, null, 2)
+              .userErrors &&
+            targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate
+              .userErrors.length
+          ) {
+            runSummary.metaobjects.failed += 1;
+            const userErrors =
+              targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate
+                .userErrors;
+            logger.error(
+              'Failed to create metaobject definition for:',
+              metaObjectDefinition.name
+            );
+            logger.verbose('User Errors:', userErrors);
+            logger.debug('Original variables:', JSON.stringify(variables, null, 2));
+            runSummary.metaobjects.details.push({
+              name: metaObjectDefinition.name,
+              status: 'failed',
+              userErrors,
+            });
+          } else {
+            runSummary.metaobjects.created += 1;
+            logger.info(
+              'Successfully created metaobject definition for:',
+              metaObjectDefinition.name
+            );
+            runSummary.metaobjects.details.push({
+              name: metaObjectDefinition.name,
+              status: 'created',
+            });
+          }
+        } catch (e) {
+          recordError(
+            `GraphQL request failed while creating metaobject definition for ${metaObjectDefinition.name}`,
+            e
           );
-        } else {
-          console.log(
-            'successfully created metaobject definition for: ',
-            metaObjectDefinition.name
-          );
+          runSummary.metaobjects.failed += 1;
+          runSummary.metaobjects.details.push({
+            name: metaObjectDefinition.name,
+            status: 'failed',
+            error: e?.message || String(e),
+          });
         }
       }
     }
-
-    // This was an unsuccessful (probably not very smart to begin with) experiment to try and get the correct ID for a metaobject reference.
-    // Maybe it could be changed to actually work in the future, who knows.
-    /*
-        // wait to try to create the ones with metaobject references in case they reference other metaobjects we were copying
-        if (definitionsWithMetaobjectReferences.length) {
-          const targetMetaobjectDefinitions = await graphqlRequest(TARGET_ENDPOINT, targetToken, metaobjectDefinitionsQuery);
-          const targetMetaObjectsArray = targetMetaobjectDefinitions.metaobjectDefinitions.edges.map((edge => 
-            {
-                const {id, fieldDefinitions, ...rest} = edge.node;
-                const flattenedFieldDefinitions = fieldDefinitions.map(field => ({
-                    ...field,
-                    type: field.type.name
-                }));
-                return {
-                    ...rest,
-                    fieldDefinitions: flattenedFieldDefinitions
-                }
-            }
-          ));
-          for (const definition of definitionsWithMetaobjectReferences) {
-            for (const fieldDefinition of definition.fieldDefinitions) {
-              if (fieldDefinition.type === 'metaobject_reference') {
-                // try to figure out referenced metaobject based on the field definition's key
-                const key = fieldDefinition.key;
-
-                const matchingMetaobjectDefinition = targetMetaObjectsArray.find(objectDefinition => objectDefinition.fieldDefinitions.find(field => field.key === key));
-
-                if (matchingMetaobjectDefinition && matchingMetaobjectDefinition.id) {
-                  const validation = fieldDefinition.validations.find(validation => validation.name === 'metaobject_definition_id');
-                  validation.value = matchingMetaobjectDefinition.id;
-                }
-              }
-            }
-            console.log('definition: ', JSON.stringify(definition, null, 2));
-            const variables = {
-                definition
-            }
-            const targetCreateMetaobjectDefinitionsResponse = await graphqlRequest(TARGET_ENDPOINT, targetToken, createMetaObjectsDefinitionMutation, variables);
-            // console.log('response: ', JSON.stringify(targetCreateMetaobjectDefinitionsResponse, null, 2));
-
-            if (targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate && targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate.userErrors && targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate.userErrors.length) {
-              console.error('Failed to create metaobject definition for: ', definition.name);
-              const userErrors = targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate.userErrors
-              console.error('User Errors: ', userErrors);
-
-              console.log('original variables: ', JSON.stringify(variables, null, 2));
-            } else {
-              console.log('successfully created metaobject definition for: ', definition.name);
-            }
-          }
-        }*/
   } catch (err) {
-    console.error('GraphQL request failed:', err.message);
+    recordError('GraphQL request failed while fetching source metaobject definitions', err);
   }
 }
 
@@ -298,9 +326,17 @@ async function copyMetafieldDefinitions(
         });
 
       for (const metafieldDefinition of sourceMetafieldArray) {
-        console.log(
+        runSummary.metafields.processed += 1;
+        logger.info(
           `************ CREATING METAFIELD DEFINITION FOR ${metafieldDefinition.name} *************************`
         );
+
+        // Verbose: show what is being updated (namespace, key, type, ownerType)
+        logger.verbose(
+          `Definition ${metafieldDefinition.namespace}.${metafieldDefinition.key} ` +
+            `(type: ${metafieldDefinition.type}, ownerType: ${metafieldDefinition.ownerType})`
+        );
+
         const variables = {
           definition: metafieldDefinition,
         };
@@ -311,7 +347,6 @@ async function copyMetafieldDefinitions(
             createMetafieldMutation,
             variables
           );
-          // console.log('response: ', JSON.stringify(targetCreateMetafieldDefinitionsResponse, null, 2));
 
           if (
             targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate &&
@@ -320,31 +355,75 @@ async function copyMetafieldDefinitions(
             targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate
               .userErrors.length
           ) {
-            console.error(
-              'Failed to create metafield definition for: ',
-              metafieldDefinition.name
-            );
+            runSummary.metafields.failed += 1;
             const userErrors =
               targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate
                 .userErrors;
-            console.error('User Errors: ', userErrors);
-
-            console.log(
-              'original variables: ',
-              JSON.stringify(variables, null, 2)
-            );
-          } else {
-            console.log(
-              'successfully created metafield definition for: ',
+            logger.error(
+              'Failed to create metafield definition for:',
               metafieldDefinition.name
             );
+            logger.verbose('User Errors:', userErrors);
+            logger.debug('Original variables:', JSON.stringify(variables, null, 2));
+            runSummary.metafields.details.push({
+              name: metafieldDefinition.name,
+              status: 'failed',
+              userErrors,
+            });
+          } else {
+            runSummary.metafields.created += 1;
+            logger.info(
+              'Successfully created metafield definition for:',
+              metafieldDefinition.name
+            );
+            runSummary.metafields.details.push({
+              name: metafieldDefinition.name,
+              status: 'created',
+            });
           }
         } catch (e) {
-          console.error('GraphQL request failed:', e.message);
+          recordError(
+            `GraphQL request failed while creating metafield definition for ${metafieldDefinition.name}`,
+            e
+          );
+          runSummary.metafields.failed += 1;
+          runSummary.metafields.details.push({
+            name: metafieldDefinition.name,
+            status: 'failed',
+            error: e?.message || String(e),
+          });
         }
       }
     } catch (err) {
-      console.error('GraphQL request failed:', err.message);
+      recordError(
+        `GraphQL request failed while fetching source metafield definitions for ownerType ${objectType}`,
+        err
+      );
+    }
+  }
+}
+
+function printFinalSummary() {
+  const lines = [];
+  lines.push('--- Migration Summary ---');
+  lines.push(
+    `Metaobjects: processed=${runSummary.metaobjects.processed}, created=${runSummary.metaobjects.created}, failed=${runSummary.metaobjects.failed}`
+  );
+  lines.push(
+    `Metafields: processed=${runSummary.metafields.processed}, created=${runSummary.metafields.created}, failed=${runSummary.metafields.failed}`
+  );
+
+  if (logLevel !== 'quiet') {
+    console.log(lines.join('\n'));
+  } else {
+    // Quiet mode: show only the summary
+    console.log(lines.join('\n'));
+  }
+
+  if (runSummary.errors.length && logLevel !== 'quiet') {
+    console.log('Errors encountered:');
+    for (const e of runSummary.errors) {
+      console.log(`- ${e.context}: ${e.message}`);
     }
   }
 }
@@ -394,7 +473,10 @@ program
     '-a, --apiVersion <version>',
     'Shopify API version to use',
     '2025-07'
-  );
+  )
+  .option('-q, --quiet', 'Quiet output; only print final summary')
+  .option('-v, --verbose', 'Verbose output; show fields being updated')
+  .option('-d, --debug', 'Debug output; include GraphQL internals');
 
 program.parse(process.argv);
 
@@ -405,29 +487,51 @@ if (!options.metaobjects && !options.metafields) {
   process.exit(1);
 }
 
-if (options.metaobjects) {
-  copyMetaobjectDefinitions(
-    options.sourceStore,
-    options.sourceToken,
-    options.targetStore,
-    options.targetToken,
-    options.apiVersion || '2025-07'
-  );
-}
+// Determine log level (debug > verbose > quiet > normal)
+let resolvedLevel = 'normal';
+if (options.debug) resolvedLevel = 'debug';
+else if (options.verbose) resolvedLevel = 'verbose';
+else if (options.quiet) resolvedLevel = 'quiet';
+initializeLogger(resolvedLevel);
 
-if (options.metafields) {
-  if (!options.shopifyObjectTypes) {
-    console.error(
-      '--shopifyObjectTypes is required. Use --help for more information.'
+(async () => {
+  const tasks = [];
+
+  if (options.metaobjects) {
+    tasks.push(
+      copyMetaobjectDefinitions(
+        options.sourceStore,
+        options.sourceToken,
+        options.targetStore,
+        options.targetToken,
+        options.apiVersion || '2025-07'
+      )
     );
-    process.exit(1);
   }
-  copyMetafieldDefinitions(
-    options.sourceStore,
-    options.sourceToken,
-    options.targetStore,
-    options.targetToken,
-    options.shopifyObjectTypes,
-    options.apiVersion || '2025-07'
-  );
-}
+
+  if (options.metafields) {
+    if (!options.shopifyObjectTypes) {
+      console.error(
+        '--shopifyObjectTypes is required. Use --help for more information.'
+      );
+      process.exit(1);
+    }
+    tasks.push(
+      copyMetafieldDefinitions(
+        options.sourceStore,
+        options.sourceToken,
+        options.targetStore,
+        options.targetToken,
+        options.shopifyObjectTypes,
+        options.apiVersion || '2025-07'
+      )
+    );
+  }
+
+  await Promise.all(tasks);
+  printFinalSummary();
+})().catch(err => {
+  recordError('Unhandled error during migration', err);
+  printFinalSummary();
+  process.exitCode = 1;
+});
