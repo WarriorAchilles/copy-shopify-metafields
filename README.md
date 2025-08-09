@@ -239,6 +239,42 @@ npm link
 shopify-metadata-migrator --help
 ```
 
+#### Code Quality Tools
+
+This project uses ESLint and Prettier for code quality and formatting:
+
+**Linting (ESLint)**
+```bash
+# Check for linting issues
+npm run lint
+
+# Fix auto-fixable linting issues
+npm run lint:fix
+```
+
+**Formatting (Prettier)**
+```bash
+# Format all files
+npm run format
+
+# Check if files are properly formatted
+npm run format:check
+```
+
+**Development Workflow**
+```bash
+# Install dependencies
+npm install
+
+# Run linting and formatting checks
+npm run lint
+npm run format:check
+
+# Fix issues automatically
+npm run lint:fix
+npm run format
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

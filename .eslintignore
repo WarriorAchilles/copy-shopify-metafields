@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.min.js
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Documentation
+*.md
+
+# Configuration files
+*.config.js
+.prettierrc
+.eslintrc.js
+
+# Images and other assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
