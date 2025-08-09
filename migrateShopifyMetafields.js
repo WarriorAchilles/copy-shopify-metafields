@@ -279,13 +279,13 @@ async function copyMetafieldDefinitions(sourceStore, sourceToken, targetStore, t
             // console.log('response: ', JSON.stringify(targetCreateMetafieldDefinitionsResponse, null, 2));
 
             if (targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate && targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate.userErrors && targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate.userErrors.length) {
-              console.error('Failed to create metaobject definition for: ', metafieldDefinition.name);
+              console.error('Failed to create metafield definition for: ', metafieldDefinition.name);
               const userErrors = targetCreateMetafieldDefinitionsResponse.metafieldDefinitionCreate.userErrors
               console.error('User Errors: ', userErrors);
 
               console.log('original variables: ', JSON.stringify(variables, null, 2));
             } else {
-              console.log('successfully created metaobject definition for: ', metafieldDefinition.name);
+              console.log('successfully created metafield definition for: ', metafieldDefinition.name);
             }
           } catch (e) {
             console.error('GraphQL request failed:', e.message);
@@ -323,13 +323,13 @@ for (let i = 0; i < args.length; i++) {
 if (!argMap.shopifyObjectTypes) {
   console.error('--shopifyObjectTypes is required. Use --help for more information.');
   // eslint-disable-next-line no-undef
-  process.exit(0);
+  process.exit(1);
 }
 
 if (!argMap.metaobjects && !argMap.metafields) {
   console.error('Please specify --metafields and/or --metaobjects');
   // eslint-disable-next-line no-undef
-  process.exit(0);
+  process.exit(1);
 }
 
 if (argMap.metaobjects) {
