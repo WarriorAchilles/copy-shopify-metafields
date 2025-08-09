@@ -19,7 +19,9 @@ class LoadingSpinner {
     if (this.isRunning) return;
     this.isRunning = true;
     this.interval = setInterval(() => {
-      process.stdout.write(`\r${this.spinner[this.currentIndex]} ${this.message}`);
+      process.stdout.write(
+        `\r${this.spinner[this.currentIndex]} ${this.message}`
+      );
       this.currentIndex = (this.currentIndex + 1) % this.spinner.length;
     }, 80);
   }
@@ -48,7 +50,7 @@ let logger = {
   verbose: () => {},
   debug: () => {},
 };
-let runSummary = {
+const runSummary = {
   metaobjects: { processed: 0, created: 0, failed: 0, details: [] },
   metafields: { processed: 0, created: 0, failed: 0, details: [] },
   errors: [],
@@ -245,17 +247,21 @@ async function copyMetaobjectDefinitions(
         };
       });
 
-    logger.info(`Found ${sourceMetaObjectsArray.length} metaobject definitions to migrate`);
+    logger.info(
+      `Found ${sourceMetaObjectsArray.length} metaobject definitions to migrate`
+    );
 
     for (let i = 0; i < sourceMetaObjectsArray.length; i++) {
       const metaObjectDefinition = sourceMetaObjectsArray[i];
       runSummary.metaobjects.processed += 1;
-      
+
       // Update spinner with progress
       if (global.spinner) {
-        global.spinner.updateMessage(`Migrating metaobject ${i + 1}/${sourceMetaObjectsArray.length}: ${metaObjectDefinition.name}`);
+        global.spinner.updateMessage(
+          `Migrating metaobject ${i + 1}/${sourceMetaObjectsArray.length}: ${metaObjectDefinition.name}`
+        );
       }
-      
+
       logger.info(
         `************ CREATING METAOBJECT DEFINITION FOR ${metaObjectDefinition.name} *************************`
       );
@@ -264,7 +270,10 @@ async function copyMetaobjectDefinitions(
       logger.verbose(
         `Fields for ${metaObjectDefinition.name}: ` +
           metaObjectDefinition.fieldDefinitions
-            .map(f => `${f.key || f.name}:${f.type}${f.required ? ' (required)' : ''}`)
+            .map(
+              f =>
+                `${f.key || f.name}:${f.type}${f.required ? ' (required)' : ''}`
+            )
             .join(', ')
       );
 
@@ -280,12 +289,13 @@ async function copyMetaobjectDefinitions(
           definition: metaObjectDefinition,
         };
         try {
-          const targetCreateMetaobjectDefinitionsResponse = await graphqlRequest(
-            TARGET_ENDPOINT,
-            targetToken,
-            createMetaObjectsDefinitionMutation,
-            variables
-          );
+          const targetCreateMetaobjectDefinitionsResponse =
+            await graphqlRequest(
+              TARGET_ENDPOINT,
+              targetToken,
+              createMetaObjectsDefinitionMutation,
+              variables
+            );
 
           if (
             targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate &&
@@ -296,14 +306,17 @@ async function copyMetaobjectDefinitions(
           ) {
             runSummary.metaobjects.failed += 1;
             const userErrors =
-              targetCreateMetaobjectDefinitionsResponse.metaobjectDefinitionCreate
-                .userErrors;
+              targetCreateMetaobjectDefinitionsResponse
+                .metaobjectDefinitionCreate.userErrors;
             logger.error(
               'Failed to create metaobject definition for:',
               metaObjectDefinition.name
             );
             logger.verbose('User Errors:', userErrors);
-            logger.debug('Original variables:', JSON.stringify(variables, null, 2));
+            logger.debug(
+              'Original variables:',
+              JSON.stringify(variables, null, 2)
+            );
             runSummary.metaobjects.details.push({
               name: metaObjectDefinition.name,
               status: 'failed',
@@ -334,8 +347,8 @@ async function copyMetaobjectDefinitions(
         }
       }
       // This was an unsuccessful (probably not very smart to begin with) experiment to try and get the correct ID for a metaobject reference.
-    // Maybe it could be changed to actually work in the future, who knows.
-    /*
+      // Maybe it could be changed to actually work in the future, who knows.
+      /*
         // wait to try to create the ones with metaobject references in case they reference other metaobjects we were copying
         if (definitionsWithMetaobjectReferences.length) {
           const targetMetaobjectDefinitions = await graphqlRequest(TARGET_ENDPOINT, targetToken, metaobjectDefinitionsQuery);
@@ -382,7 +395,10 @@ async function copyMetaobjectDefinitions(
         }*/
     }
   } catch (err) {
-    recordError('GraphQL request failed while fetching source metaobject definitions', err);
+    recordError(
+      'GraphQL request failed while fetching source metaobject definitions',
+      err
+    );
   }
 }
 
@@ -415,17 +431,21 @@ async function copyMetafieldDefinitions(
           };
         });
 
-      logger.info(`Found ${sourceMetafieldArray.length} metafield definitions for ${objectType} to migrate`);
+      logger.info(
+        `Found ${sourceMetafieldArray.length} metafield definitions for ${objectType} to migrate`
+      );
 
       for (let i = 0; i < sourceMetafieldArray.length; i++) {
         const metafieldDefinition = sourceMetafieldArray[i];
         runSummary.metafields.processed += 1;
-        
+
         // Update spinner with progress
         if (global.spinner) {
-          global.spinner.updateMessage(`Migrating metafield ${i + 1}/${sourceMetafieldArray.length} for ${objectType}: ${metafieldDefinition.name}`);
+          global.spinner.updateMessage(
+            `Migrating metafield ${i + 1}/${sourceMetafieldArray.length} for ${objectType}: ${metafieldDefinition.name}`
+          );
         }
-        
+
         logger.info(
           `************ CREATING METAFIELD DEFINITION FOR ${metafieldDefinition.name} *************************`
         );
@@ -463,7 +483,10 @@ async function copyMetafieldDefinitions(
               metafieldDefinition.name
             );
             logger.verbose('User Errors:', userErrors);
-            logger.debug('Original variables:', JSON.stringify(variables, null, 2));
+            logger.debug(
+              'Original variables:',
+              JSON.stringify(variables, null, 2)
+            );
             runSummary.metafields.details.push({
               name: metafieldDefinition.name,
               status: 'failed',
@@ -568,11 +591,7 @@ program
     '-o, --shopifyObjectTypes <types>',
     'Comma separated list of object types (for copying metafields), eg: PRODUCT,PRODUCTVARIANT,COLLECTION etc. See: https://shopify.dev/docs/api/admin-graphql/2024-04/enums/MetafieldOwnerType for more types that may or may not work with this tool.'
   )
-  .option(
-    '-a, --apiVersion <version>',
-    'Shopify API version to use',
-    '2025-07'
-  )
+  .option('-a, --apiVersion <version>', 'Shopify API version to use', '2025-07')
   .option('-q, --quiet', 'Quiet output; only print final summary')
   .option('-v, --verbose', 'Verbose output; show fields being updated')
   .option('-d, --debug', 'Debug output; include GraphQL internals');
