@@ -41,6 +41,7 @@ If you have a suggestion for a new feature or improvement:
 ## Development Setup
 
 1. **Fork the repository**
+
    ```bash
    # Clone your fork
    git clone https://github.com/YOUR_USERNAME/shopify-metadata-migrator.git
@@ -52,6 +53,7 @@ If you have a suggestion for a new feature or improvement:
    - Access to Shopify stores for testing
 
 3. **Set up your development environment**
+
    ```bash
    # No additional dependencies required
    # The project uses native Node.js fetch
@@ -86,6 +88,7 @@ If you have a suggestion for a new feature or improvement:
    - Check for any error conditions
 
 5. **Commit your changes**
+
    ```bash
    git add .
    git commit -m "feat: add new validation for metafield types"
@@ -93,6 +96,7 @@ If you have a suggestion for a new feature or improvement:
    ```
 
 6. **Push to your fork**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -132,6 +136,7 @@ Use conventional commit messages:
 - `chore:` for maintenance tasks
 
 Example:
+
 ```
 feat: add validation for metaobject reference types
 fix: handle GraphQL errors more gracefully

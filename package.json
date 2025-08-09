@@ -8,7 +8,11 @@
   },
   "scripts": {
     "start": "node migrateShopifyMetafields.js",
-    "test": "node migrateShopifyMetafields.js --help"
+    "test": "node migrateShopifyMetafields.js --help",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "keywords": [
     "shopify",
@@ -42,5 +46,13 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^17.21.3",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-promise": "^7.2.1",
+    "prettier": "^3.6.2"
   }
 }

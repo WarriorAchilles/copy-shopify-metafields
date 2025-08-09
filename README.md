@@ -19,6 +19,7 @@ npm install -g shopify-metadata-migrator
 ## Overview
 
 This tool allows you to copy:
+
 - **Metafield Definitions**: Custom field definitions for various Shopify objects (products, variants, collections, etc.)
 - **Metaobject Definitions**: Custom object type definitions with their field structures
 
@@ -31,17 +32,20 @@ This tool allows you to copy:
 ## Installation
 
 ### Option 1: Install globally (recommended)
+
 ```bash
 npm install -g shopify-metadata-migrator
 ```
 
 ### Option 2: Install locally
+
 ```bash
 npm install shopify-metadata-migrator
 npx shopify-metadata-migrator --help
 ```
 
 ### Option 3: Run directly (development)
+
 ```bash
 # Clone or download this repository
 git clone https://github.com/warriorachilles/shopify-metadata-migrator.git
@@ -61,20 +65,21 @@ shopify-metadata-migrator --sourceStore <source-store> --sourceToken <source-tok
 
 ### Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--sourceStore` | Yes | Source Shopify store domain (e.g., `my-dev-store`) |
-| `--sourceToken` | Yes | Source Shopify admin API access token |
-| `--targetStore` | Yes | Target Shopify store domain (e.g., `my-prod-store`) |
-| `--targetToken` | Yes | Target Shopify admin API access token |
-| `--metafields` | No | Flag to copy metafield definitions |
-| `--metaobjects` | No | Flag to copy metaobject definitions |
-| `--shopifyObjectTypes` | Yes | Comma-separated list of Shopify object types for metafields |
-| `--apiVersion` | No | Shopify API version to use (default: 2025-07) |
+| Parameter              | Required | Description                                                 |
+| ---------------------- | -------- | ----------------------------------------------------------- |
+| `--sourceStore`        | Yes      | Source Shopify store domain (e.g., `my-dev-store`)          |
+| `--sourceToken`        | Yes      | Source Shopify admin API access token                       |
+| `--targetStore`        | Yes      | Target Shopify store domain (e.g., `my-prod-store`)         |
+| `--targetToken`        | Yes      | Target Shopify admin API access token                       |
+| `--metafields`         | No       | Flag to copy metafield definitions                          |
+| `--metaobjects`        | No       | Flag to copy metaobject definitions                         |
+| `--shopifyObjectTypes` | Yes      | Comma-separated list of Shopify object types for metafields |
+| `--apiVersion`         | No       | Shopify API version to use (default: 2025-07)               |
 
 ### Examples
 
 #### Copy both metafields and metaobjects
+
 ```bash
 shopify-metadata-migrator \
   --sourceStore my-dev-store \
@@ -87,6 +92,7 @@ shopify-metadata-migrator \
 ```
 
 #### Copy only metafields
+
 ```bash
 shopify-metadata-migrator \
   --sourceStore my-dev-store \
@@ -98,6 +104,7 @@ shopify-metadata-migrator \
 ```
 
 #### Copy only metaobjects
+
 ```bash
 shopify-metadata-migrator \
   --sourceStore my-dev-store \
@@ -109,6 +116,7 @@ shopify-metadata-migrator \
 ```
 
 #### Using default API version (2025-07)
+
 ```bash
 shopify-metadata-migrator \
   --sourceStore my-dev-store \
@@ -121,6 +129,7 @@ shopify-metadata-migrator \
 ```
 
 #### Using a specific API version
+
 ```bash
 shopify-metadata-migrator \
   --sourceStore my-dev-store \
@@ -189,6 +198,7 @@ The tool uses Shopify's Admin GraphQL API and supports version management:
 ## Error Handling
 
 The tool provides detailed error reporting:
+
 - GraphQL errors are logged with full details
 - Failed definition creations show specific user errors
 - Original variables are logged for debugging purposes
@@ -211,6 +221,7 @@ The tool provides detailed error reporting:
 ### Debug Mode
 
 The tool provides verbose logging by default. Look for:
+
 - `************ CREATING METAOBJECT DEFINITION FOR [name] *************************`
 - `************ CREATING METAFIELD DEFINITION FOR [name] *************************`
 - Success/failure messages for each definition
@@ -222,10 +233,12 @@ This tool was created by Zion Emond. Feel free to submit issues or improvements.
 ### Publishing to npm
 
 This package is automatically published to npm when:
+
 - A new GitHub release is created (automated)
 - The manual publish workflow is triggered (manual)
 
 To publish manually:
+
 1. Go to the [Actions tab](https://github.com/warriorachilles/shopify-metadata-migrator/actions)
 2. Select "Manual Publish to npm"
 3. Enter the new version number
@@ -234,6 +247,7 @@ To publish manually:
 ### Development
 
 To test the package locally before publishing:
+
 ```bash
 npm link
 shopify-metadata-migrator --help
@@ -248,6 +262,7 @@ Please ensure compliance with Shopify's API terms of service when using this too
 ## Support
 
 For issues related to:
+
 - **Shopify API**: Refer to [Shopify's API documentation](https://shopify.dev/docs/api)
 - **Tool functionality**: Check the error messages and ensure you're using Node.js 18+
 - **Access tokens**: Verify permissions in your Shopify admin panel

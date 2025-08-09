@@ -1,0 +1,27 @@
+{
+  "root": true,
+  "env": {
+    "es2022": true,
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "script"
+  },
+  "plugins": ["n", "promise", "prettier"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:n/recommended",
+    "plugin:promise/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "prettier/prettier": "error",
+    "n/no-unsupported-features/node-builtins": "off",
+    "n/no-process-exit": "off"
+  },
+  "globals": {
+    "fetch": "readonly"
+  }
+}
